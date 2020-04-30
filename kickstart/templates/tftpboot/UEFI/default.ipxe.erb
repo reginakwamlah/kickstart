@@ -1,0 +1,124 @@
+:start
+menu  BEDROCK <%= node['hostname'] %> UEFI/iPXE MAIN MENU
+item Check-In-DEFAULT Check-In Kernel (DEFAULT)
+item Check-In-Kernel-DEBUG Check-In Kernel - DEBUG (noreboot)
+item Check-In-DEBUG Check-In DEBUG DEVEL
+item NVIDIA NVIDIA Test Utility
+item RescueLayer Linux Live Environment
+item WinPE Windows PE
+item OSNM <----- Operating System Netboot Menu ----->
+item shell iPXE Shell
+item exit Exit UEFI/iPXE Menu and boot normally.
+choose --timeout 20000 --default Check-In-DEFAULT selected || goto cancel
+set menu-timeout 0
+goto ${selected}
+
+:cancel
+echo You cancelled the menu, dropping you to a shell
+goto shell
+
+:Check-In-DEFAULT
+echo LOADING DEFAULT CHECK-IN KERNEL
+set 208:hex f1:00:74:7e
+kernel ${base-url}/ipxe/NETBOOT/netboot64-cent7 initrd=cent7-minimal.img rootflags=loop root=live:/rescue_layer.iso rootfstype=auto ro rd.live.image rd.writable.fsimg=1 biosdevname=0 net.ifnames=0 consoleblank=0 nouveau.modeset=0 SCRIPT=ipmi_checkin.sh
+initrd ${base-url}/NETBOOT/images/cent7-minimal.img 
+boot || failed
+goto start
+
+:Check-In-Kernel-DEBUG
+echo LOADING DEBUG CHECK-IN KERNEL
+set 208:hex f1:00:74:7e
+kernel ${base-url}/ipxe/NETBOOT/netboot64-cent7 initrd=cent7-minimal.img rootflags=loop root=live:/rescue_layer.iso rootfstype=auto ro rd.live.image rd.writable.fsimg=1 biosdevname=0 net.ifnames=0 consoleblank=0 nouveau.modeset=0 SCRIPT=ipmi_checkin_debug.sh
+initrd ${base-url}/NETBOOT/images/cent7-minimal.img
+boot || failed
+goto start
+
+:Check-In-DEBUG
+echo LOADING DEBUG DEVEL CHECK-IN KERNEL
+set 208:hex f1:00:74:7e
+kernel ${base-url}/ipxe/NETBOOT/netboot64-cent7-devel initrd=cent7-minimal-devel.img rootflags=loop root=live:/rescue_layer.iso rootfstype=auto ro rd.live.image rd.writable.fsimg=1 biosdevname=0 net.ifnames=0 consoleblank=0 nouveau.modeset=0 SCRIPT=ipmi_checkin_debug.sh
+initrd ${base-url}/NETBOOT/images/cent7-minimal-devel.img
+boot || failed
+goto start
+
+:NVIDIA
+echo LOADING NVIDIA TEST UTILITY
+set 208:hex f1:00:74:7e
+kernel ${base-url}/ipxe/NETBOOT/netboot64-cent7 initrd=cent7-minimal.img rootflags=loop root=live:/rescue_layer.iso rootfstype=auto ro rd.live.image rd.writable.fsimg=1 biosdevname=0 net.ifnames=0 consoleblank=0 nouveau.modeset=0 SCRIPT=nvidia-tool.sh
+initrd ${base-url}/NETBOOT/images/cent7-minimal.img
+boot || failed
+goto start
+
+:RescueLayer
+echo Linux Live Environment
+kernel ${base-url}/ipxe/NETBOOT/netboot64-cent7 initrd=cent7.img rootflags=loop root=live:/rescue_layer.iso rootfstype=auto ro rd.live.image rd.writable.fsimg=1 consoleblank=0 BOOTIF=01-${netX/mac}
+initrd ${base-url}/NETBOOT/images/cent7.img
+boot || failed
+goto start
+
+:WinPE
+echo Loading Windows 10 PE files...
+chain ${base-url}/ipxe/WINPE10/boot.ipxe
+boot || failed
+goto shell
+
+###################### Operating System Netboot Menu ######################
+
+:OSNM
+menu Operating System Netboot Menu
+item CentOS7.6 CentOS 7.6 Netboot
+item RHEL7.6 Red Hat Enterprise Linux 7.6 Netboot
+item SLES15 Suse Linux 15 Netboot
+item Ubuntu1804.1 Ubuntu 18.04.1 Netboot
+item --key 0x1B back Back to top menu...
+choose --timeout 0 --default back selected || goto cancel
+set submenu-timeout 0
+goto ${selected}
+
+:CentOS7.6
+echo CentOS 7.6 Netboot
+kernel ${base-url}/CentOS/CENTOS_7.6_64/images/pxeboot/vmlinuz ip=dhcp initrd=initrd.img inst.repo=${base-url}/CentOS/CENTOS_7.6_64 BOOTIF=01-${netX/mac} noipv6 floppy.allowed_drive_mask=0 pcie_aspm=off nomodeset biosdevname=0 net.ifnames=0 
+initrd ${base-url}/CentOS/CENTOS_7.6_64/images/pxeboot/initrd.img
+boot || failed
+goto start
+
+:RHEL7.6
+echo Red Hat Enterprise Linux 7.6 Netboot
+kernel ${base-url}/RedHat/REDHAT_7.6_64/images/pxeboot/vmlinuz ip=dhcp initrd=initrd.img inst.repo=${base-url}/RedHat/REDHAT_7.6_64 BOOTIF=01-${netX/mac} noipv6 floppy.allowed_drive_mask=0 pcie_aspm=off nomodeset biosdevname=0 net.ifnames=0 
+initrd ${base-url}/RedHat/REDHAT_7.6_64/images/pxeboot/initrd.img
+boot || failed
+goto start
+
+:SLES15
+echo Suse Linux 15 Netboot
+kernel ${base-url}/SUSE/SLES_15.0_64/boot/x86_64/loader/linux initrd=initrd install=${base-url}/SUSE/SLES_15.0_64
+initrd ${base-url}/SUSE/SLES_15.0_64/boot/x86_64/loader/initrd
+boot || failed
+goto start
+
+:Ubuntu1804.1
+echo Ubuntu 18.04.1 Netboot
+kernel ${base-url}/Ubuntu/UBUNTU_18.04.1_64/install/netboot/ubuntu-installer/amd64/linux
+initrd ${base-url}/Ubuntu/UBUNTU_18.04.1_64/install/netboot/ubuntu-installer/amd64/initrd.gz 
+imgargs linux initrd=initrd.gz BOOTIF=01-${netX/mac} BOOT_IMAGE=${base-url}/Ubuntu/UBUNTU_18.04.1_64/install/netboot/ubuntu-installer/amd64/linux vga=785 nomodeset biosdevname=0 net.ifnames=0 keyboard-configuration/xkb-keymap=us root=/dev/rd/0 rw
+boot || failed
+goto start
+
+:shell
+echo Type 'exit' to get the back to the menu
+shell
+set menu-timeout 0
+set submenu-timeout 0
+goto start
+
+:back
+set submenu-timeout 0
+clear submenu-default
+goto start
+
+:failed
+echo Booting failed, dropping to shell
+goto shell
+
+:exit
+exit

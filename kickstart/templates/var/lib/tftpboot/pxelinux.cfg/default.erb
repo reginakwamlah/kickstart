@@ -1,0 +1,8 @@
+default menu.c32
+prompt <% @propmt %>
+timeout <% @timeout %>
+MENU TITLE bedrock.com PXE Menu
+LABEL <% @label %>
+MENU LABEL CentOS8_X64
+KERNEL <% @kernel%>
+APPEND initrd=/networkboot/initrd.img inst.repo=ftp://<% @domainname %>/pub ks=ftp://<% @domainname %>/pub/centos8.cfg

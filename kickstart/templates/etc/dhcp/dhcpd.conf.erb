@@ -1,0 +1,36 @@
+Define the domain name of your DHCP server
+option domain-name <% @domainname %>;
+
+option domain-name-servers  <% @domainnameserver %>;
+
+# Define how long should an endpoint use the assigned IP address
+default-lease-time <% @defaultleasttime %>;    # One hour
+
+# Define the maximum lease time
+max-lease-time <% @maxleasetime %>; # Two hours
+
+# Other values you can use are 86400 (one day), 604800 (one week) and 2592000 (30 days).
+#
+# Declare the DHCP server official for the local network
+authoritative;
+
+# Change the default log file for DHCP server.
+#log-facility local7;
+
+#### Subnet Declaration ####
+# The subnet declaration includes a range of IP addresses that a DHCP server can assign to clients.
+# and global options to apply for every DHCP client.
+#
+# Define the subnet of the DHCP server interface (Network address and subnet mask)
+subnet <% @subnet %> netmask <% @netmask %> {
+    # Define the broadcast address
+    option broadcast-address <% @broadcast %>;
+    # Define the gateway
+    option routers <% @router %>;
+    # Define the range of IP addresses to be leased
+    range <% @rangemin %> <% @rangemax %>;
+
+#IP of PXE Server
+next-server <% @nextserver %>;
+filename "<% @pxefilename %>";
+}
